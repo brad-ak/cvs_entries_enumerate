@@ -44,8 +44,11 @@ func GetPaths(host string, filename string, pathList []string, dirList []string,
 
 		for scanner.Scan() {
 			sp := strings.Split(scanner.Text(), "/")
-			// If it's not a directory or a file, just move on
-			if strings.Split(scanner.Text(), "")[0] == ":" {
+			if strings.Contains(scanner.Text(), "<html>") {
+				break
+			} else if strings.Contains(scanner.Text(), "smp/src/php") {
+				break
+			} else if strings.Split(scanner.Text(), "")[0] == ":" {
 				continue
 				// If it's a directory, move on for now
 			} else if strings.Contains(scanner.Text(), "D/") {
@@ -66,6 +69,10 @@ func GetPaths(host string, filename string, pathList []string, dirList []string,
 func GetValidPaths(host string, pathList []string, threads int, client *http.Client) []string {
 	var validPaths []string
 
+	for _, path := range pathList {
+		fmt.Println(path)
+	}
+
 	spin := spinner.New(spinner.CharSets[1], 100*time.Millisecond)
 	spin.Prefix = "[*] Testing for valid file paths "
 	spin.Start()
@@ -76,8 +83,10 @@ func GetValidPaths(host string, pathList []string, threads int, client *http.Cli
 	for _, path := range pathList {
 		sem <- true
 		go func(path string) {
-			resp, _ := client.Get(host + path)
-			if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+			resp, err := client.Get(host + path)
+			if err != nil {
+				fmt.Println("[X] Skipping error")
+			} else if resp.StatusCode == 200 && resp.StatusCode <= 299 {
 				mut.Lock()
 				validPaths = append(validPaths, path)
 				mut.Unlock()
@@ -89,7 +98,6 @@ func GetValidPaths(host string, pathList []string, threads int, client *http.Cli
 	for i := 0; i < cap(sem); i++ {
 		sem <- true
 	}
-
 	spin.Stop()
 
 	return validPaths
