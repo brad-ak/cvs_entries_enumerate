@@ -69,10 +69,6 @@ func GetPaths(host string, filename string, pathList []string, dirList []string,
 func GetValidPaths(host string, pathList []string, threads int, client *http.Client) []string {
 	var validPaths []string
 
-	for _, path := range pathList {
-		fmt.Println(path)
-	}
-
 	spin := spinner.New(spinner.CharSets[1], 100*time.Millisecond)
 	spin.Prefix = "[*] Testing for valid file paths "
 	spin.Start()
